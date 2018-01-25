@@ -1,0 +1,7 @@
+nara_captcha.admin_settings_form:
+  path: '/admin/config/people/captcha/nara_captcha'
+  defaults:
+    _form: '\Drupal\nara_captcha\Form\NaraCaptchaAdminSettingsForm'
+    _title: 'NARA Captcha'
+  requirements:
+    _permission: 'administer nara_captcha'

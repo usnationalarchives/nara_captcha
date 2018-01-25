@@ -1,0 +1,3 @@
+administer nara_captcha:
+  title: 'Administer NARA Captcha'
+  description: 'Administer NARA Captcha settings.'

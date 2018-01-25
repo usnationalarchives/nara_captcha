@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Verifies if user is a human without necessity to solve a CAPTCHA.
+ */
+
+ /**
+  * Implements hook_captcha().
+  */
+function nara_captcha_captcha($op, $captcha_type = '') {
+  switch ($op) {
+    case 'list':
+      return ['NARA Captcha'];
+
+    case 'generate':
+      if ($captcha_type == 'NARA Captcha') {
+        $captcha = [];
+        $options = [];
+        $url = '';
+        $client = \Drupal::httpClient();
+        $res = json_decode($client->request('GET', 'https://catalog.archives.gov/api/v1?naIds=4708851,24619059,193067')->getBody()->getContents());
+        foreach ($res->opaResponse->results->result as $key => $value) {
+          if (is_array($value->objects->object)) {
+            $url = $value->objects->object[0]->file->{'@url'};
+          }
+          else {
+            $url = $value->objects->object->file->{'@url'};
+          }
+          $options[$value->naId] = '<div>' . $value->description->item->title . '</div><img src="' . $url . '" width="400" />';
+        }
+
+        $captcha['solution'] = '4708851|24619059|0';
+        $captcha['form']['captcha_response'] = [
+          '#type' => 'checkboxes',
+          '#options' => $options,
+          '#title' => t('Choose the typed documents'),
+          '#required' => TRUE,
+        ];
+        $captcha['captcha_validate'] = 'nara_captcha_validation';
+        return $captcha;
+      }
+      break;
+  }
+
+}
+
+/**
+ * Implements hook_theme().
+ */
+function nara_captcha_theme($existing, $type, $theme, $path) {
+  return [
+    'form_element_nara_captcha' => [
+      'base hook' => 'form_element',
+    ],
+  ];
+}
+
+/**
+ * Custom Validation.
+ */
+function nara_captcha_validation($solution, $response) {
+  if (implode('|', $response) == $solution) {
+
+    $config = \Drupal::config('nara_captcha.settings');
+    $client = \Drupal::httpClient();
+    $uri = $config->get('api_url');
+
+    // Request disabled until API solution finished
+    // $request = $client->post($uri, [
+    //   'form_params' => [
+    //     "naid" => 12141,
+    //   ],
+    // ]);
+    //$response = json_decode($request->getBody());
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}

@@ -1,0 +1,4 @@
+nara_captcha.admin_settings_form_tab:
+  route_name: nara_captcha.admin_settings_form
+  title: NARA Captcha
+  base_route: captcha_settings

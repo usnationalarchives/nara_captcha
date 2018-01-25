@@ -1,0 +1,6 @@
+nara_captcha.admin_settings_form:
+  title: 'NARA Captcha'
+  parent: captcha.settings
+  description: 'Administer the NARA Captcha web service.'
+  route_name: nara_captcha.admin_settings_form
+  weight: 1
