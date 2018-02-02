@@ -45,6 +45,17 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
     ];
 
+    $form['general']['theme'] = [
+      '#default_value' => $config->get('theme'),
+      '#required' => TRUE,
+      '#title' => $this->t('Theme'),
+      '#type' => 'select',
+      '#options' => [
+        '1' => $this->t('Light'),
+        '2' => $this->t('Dark'),
+      ],
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -55,6 +66,7 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
     $config = $this->config('nara_captcha.settings');
     $config
       ->set('api_url', $form_state->getValue('api_url'))
+      ->set('theme', $form_state->getValue('theme'))
       ->save();
 
     parent::submitForm($form, $form_state);

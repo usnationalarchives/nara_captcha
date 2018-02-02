@@ -1,13 +1,44 @@
 <?php
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * @file
  * Verifies if user is a human without necessity to solve a CAPTCHA.
  */
 
+
  /**
-  * Implements hook_captcha().
-  */
+ * Implements hook_form_alter().
+ */
+
+function nara_captcha_form_alter(&$form, FormStateInterface &$form_state, $form_id) {
+  if (isset($form['captcha'])) {
+    if ($form['captcha']['#captcha_type'] == 'nara_captcha/NARA Captcha') {
+      $form['#attached']['library'][] = 'nara_captcha/nara-captcha';
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_captcha().
+ */
+function nara_captcha_preprocess_captcha(&$variables) {
+  if ($variables['element']['#captcha_type'] == 'nara_captcha/NARA Captcha') {
+    $theme_setting = \Drupal::config('nara_captcha.settings');
+    ksm($theme_setting);
+    if ($theme_setting->get('theme') == '1') {
+      $variables['details']['#attributes']['class'][] ='nara-captcha-light-theme';
+    } else {
+      $variables['details']['#attributes']['class'][] ='nara-captcha-dark-theme';
+    }
+    
+  }
+}
+
+ /**
+ * Implements hook_captcha().
+ */
 function nara_captcha_captcha($op, $captcha_type = '') {
   switch ($op) {
     case 'list':
@@ -27,33 +58,34 @@ function nara_captcha_captcha($op, $captcha_type = '') {
           else {
             $url = $value->objects->object->file->{'@url'};
           }
-          $options[$value->naId] = '<div>' . $value->description->item->title . '</div><img src="' . $url . '" width="400" />';
+          $options[$value->naId] = '<div class="captcha-response-item"><img src="' . $url . '" alt="' . $value->description->item->title . '" /></div>';
         }
-
+        
         $captcha['solution'] = '4708851|24619059|0';
         $captcha['form']['captcha_response'] = [
           '#type' => 'checkboxes',
           '#options' => $options,
-          '#title' => t('Choose the typed documents'),
+          '#title' => t('Select all images with typed text below:'),
           '#required' => TRUE,
         ];
+        $captcha['form']['logo'] = [
+          '#type' => 'inline_template',
+          '#template' => '<div class="nara-logo">
+              <a href="https://www.archives.gov" target="_blank" rel="noopener nofollow">
+                  {{ nara_logo|raw }}
+                  <span>www.archives.gov</span>
+              </a>
+          </div>',
+          '#context' => [
+            'nara_logo' => $variables['details']['#nara_logo'] = file_get_contents(drupal_get_path('module', 'nara_captcha') . '/assets/us-national-archives.svg'),
+          ]
+        ];
+        
         $captcha['captcha_validate'] = 'nara_captcha_validation';
         return $captcha;
       }
       break;
   }
-
-}
-
-/**
- * Implements hook_theme().
- */
-function nara_captcha_theme($existing, $type, $theme, $path) {
-  return [
-    'form_element_nara_captcha' => [
-      'base hook' => 'form_element',
-    ],
-  ];
 }
 
 /**
@@ -62,9 +94,9 @@ function nara_captcha_theme($existing, $type, $theme, $path) {
 function nara_captcha_validation($solution, $response) {
   if (implode('|', $response) == $solution) {
 
-    $config = \Drupal::config('nara_captcha.settings');
-    $client = \Drupal::httpClient();
-    $uri = $config->get('api_url');
+    // $config = \Drupal::config('nara_captcha.settings');
+    // $client = \Drupal::httpClient();
+    // $uri = $config->get('api_url');
 
     // Request disabled until API solution finished
     // $request = $client->post($uri, [

@@ -1,0 +1,100 @@
+.nara-logo {
+  width: 70%;
+  display: flex;
+}
+
+.nara-logo svg {
+  width: 30%;
+}
+
+.nara-logo a span {
+  border-left: 1px solid black;
+}
+
+#edit-captcha-response {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+#edit-captcha-response .form-item {
+  width: 50%;
+}
+
+#edit-captcha-response label {
+  display: block;
+  padding: 15px;
+  position: relative;
+  
+}
+
+#edit-captcha-response .captcha-response-item {
+  overflow: hidden;
+  height: 200px;
+}
+
+#edit-captcha-response img {
+  width: 200%;
+  max-width: 200%;
+}
+
+/* When Checked */
+#edit-captcha-response .form-checkbox:checked + label {
+  border: 2px solid #EC4800;
+}
+
+#edit-captcha-response .form-checkbox:checked + label::before {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  background: rgba(33, 43, 64, 0.9);
+  content: "";
+}
+
+#edit-captcha-response .form-checkbox:checked + label::after {
+  position: absolute;
+  content: "\2713";
+  text-align: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 50px;
+  height: 70px;
+  width: 70px;
+  color: #EC4800;
+  background: #ffffff;
+  border-radius: 50%;
+}
+
+/* Switch to visibility hidden css */
+#edit-captcha-response .form-checkbox {
+  display: none;
+}
+
+
+.nara-captcha-dark-theme {
+  color: #ffffff;
+}
+
+.nara-captcha-dark-theme .details-wrapper {
+  background: #212B40;
+}
+
+.nara-captcha-dark-theme #edit-captcha-response label {
+  border: 2px solid #ffffff;
+}
+
+.nara-captcha-light-theme {
+  color: #212B40;
+}
+
+.nara-captcha-light-theme .details-wrapper {
+  background: #ffffff;
+}
+
+.nara-captcha-light-theme #edit-captcha-response label {
+  border: 2px solid #212B40;
+}
+
