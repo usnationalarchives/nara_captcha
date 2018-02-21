@@ -16,7 +16,7 @@ In your composer file add the following two snippets to your Drupal 8 root Compo
 ```
 ```
 "require": {
-  "agencychief/nara_image_tool": "dev-develop"
+  "agencychief/nara_captcha": "dev-develop"
 }
 ```
 After running `composer install` enable the module, which will also enable Drupal Captcha. 

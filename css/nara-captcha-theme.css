@@ -1,28 +1,21 @@
-.nara-logo {
-  width: 70%;
-  display: flex;
-}
-
-.nara-logo svg {
-  width: 30%;
-}
-
-.nara-logo a span {
-  border-left: 1px solid black;
+#edit-captcha-response--wrapper {
+  width: 700px;
+  margin: 0 auto 20px;
+  padding-top: 20px;
 }
 
 #edit-captcha-response {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
 #edit-captcha-response .form-item {
-  width: 50%;
+  flex-basis: 50%;
 }
 
 #edit-captcha-response label {
-  display: block;
+  display: inline-block;
   padding: 15px;
   position: relative;
   
@@ -30,7 +23,8 @@
 
 #edit-captcha-response .captcha-response-item {
   overflow: hidden;
-  height: 200px;
+  height: 300px;
+  width: 300px;
 }
 
 #edit-captcha-response img {
@@ -49,7 +43,7 @@
   left: 15px;
   right: 15px;
   bottom: 15px;
-  background: rgba(33, 43, 64, 0.9);
+  background: rgba(41, 41, 41, 0.9);
   content: "";
 }
 
@@ -73,28 +67,71 @@
   display: none;
 }
 
+.nara-logo a {
+  text-transform: lowercase;
+  text-decoration: none;
+  letter-spacing: 1px;
+  font-weight: 400;
+  border-bottom: none;
+}
+
+.nara-logo a span {
+  font-weight: 700;
+}
+
+.nara-logo a:hover {
+  text-decoration: underline;
+  border-bottom: none;
+}
 
 .nara-captcha-dark-theme {
   color: #ffffff;
 }
 
 .nara-captcha-dark-theme .details-wrapper {
-  background: #212B40;
+  background: #292929;
+  padding-bottom: 20px;
+}
+
+.nara-captcha-dark-theme .details-wrapper legend {
+  padding: 10px 0;
+  font-size: 24px;
+  font-weight: 400;
+  width: 100%;
+  border-bottom: 1px solid #fff;
 }
 
 .nara-captcha-dark-theme #edit-captcha-response label {
   border: 2px solid #ffffff;
 }
 
+.nara-captcha-dark-theme .nara-logo a {
+  color: #ffffff;
+}
+
 .nara-captcha-light-theme {
-  color: #212B40;
+  color: #292929;
 }
 
 .nara-captcha-light-theme .details-wrapper {
   background: #ffffff;
+  padding-bottom: 20px;
+}
+
+.nara-captcha-light-theme .details-wrapper legend {
+  padding: 10px 0;
+  font-size: 24px;
+  font-weight: 400;
+  width: 100%;
+  border-bottom: 1px solid #555;
 }
 
 .nara-captcha-light-theme #edit-captcha-response label {
-  border: 2px solid #212B40;
+  border: 2px solid #292929;
 }
+
+.nara-captcha-light-theme .nara-logo a {
+  color: #555;
+}
+
 

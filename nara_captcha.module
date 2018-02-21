@@ -7,11 +7,9 @@ use Drupal\Core\Form\FormStateInterface;
  * Verifies if user is a human without necessity to solve a CAPTCHA.
  */
 
-
- /**
+/**
  * Implements hook_form_alter().
  */
-
 function nara_captcha_form_alter(&$form, FormStateInterface &$form_state, $form_id) {
   if (isset($form['captcha'])) {
     if ($form['captcha']['#captcha_type'] == 'nara_captcha/NARA Captcha') {
@@ -26,20 +24,19 @@ function nara_captcha_form_alter(&$form, FormStateInterface &$form_state, $form_
 function nara_captcha_preprocess_captcha(&$variables) {
   if ($variables['element']['#captcha_type'] == 'nara_captcha/NARA Captcha') {
     $theme_setting = \Drupal::config('nara_captcha.settings');
-    ksm($theme_setting);
     if ($theme_setting->get('theme') == '1') {
       $variables['details']['#attributes']['class'][] ='nara-captcha-light-theme';
-    } else {
-      $variables['details']['#attributes']['class'][] ='nara-captcha-dark-theme';
     }
-    
+    else {
+      $variables['details']['#attributes']['class'][] = 'nara-captcha-dark-theme';
+    }
   }
 }
 
- /**
+/**
  * Implements hook_captcha().
  */
-function nara_captcha_captcha($op, $captcha_type = '') {
+function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
   switch ($op) {
     case 'list':
       return ['NARA Captcha'];
@@ -47,21 +44,13 @@ function nara_captcha_captcha($op, $captcha_type = '') {
     case 'generate':
       if ($captcha_type == 'NARA Captcha') {
         $captcha = [];
-        $options = [];
+        $options = NULL;
         $url = '';
         $client = \Drupal::httpClient();
-        $res = json_decode($client->request('GET', 'https://catalog.archives.gov/api/v1?naIds=4708851,24619059,193067')->getBody()->getContents());
-        foreach ($res->opaResponse->results->result as $key => $value) {
-          if (is_array($value->objects->object)) {
-            $url = $value->objects->object[0]->file->{'@url'};
-          }
-          else {
-            $url = $value->objects->object->file->{'@url'};
-          }
-          $options[$value->naId] = '<div class="captcha-response-item"><img src="' . $url . '" alt="' . $value->description->item->title . '" /></div>';
-        }
-        
-        $captcha['solution'] = '4708851|24619059|0';
+        $naIds = get_test_array_items();
+        $res = json_decode($client->request('GET', 'https://catalog.archives.gov/api/v1?naIds=' . $naIds['search_ids'])->getBody()->getContents());
+        $options = build_captcha_items($res);
+        $captcha['solution'] = $naIds['solution'];
         $captcha['form']['captcha_response'] = [
           '#type' => 'checkboxes',
           '#options' => $options,
@@ -72,15 +61,10 @@ function nara_captcha_captcha($op, $captcha_type = '') {
           '#type' => 'inline_template',
           '#template' => '<div class="nara-logo">
               <a href="https://www.archives.gov" target="_blank" rel="noopener nofollow">
-                  {{ nara_logo|raw }}
-                  <span>www.archives.gov</span>
+                Powered by the <span>National Archives</span>
               </a>
           </div>',
-          '#context' => [
-            'nara_logo' => $variables['details']['#nara_logo'] = file_get_contents(drupal_get_path('module', 'nara_captcha') . '/assets/us-national-archives.svg'),
-          ]
         ];
-        
         $captcha['captcha_validate'] = 'nara_captcha_validation';
         return $captcha;
       }
@@ -89,11 +73,51 @@ function nara_captcha_captcha($op, $captcha_type = '') {
 }
 
 /**
+ * Currently just a test function to supply an array [search ids, solution].
+ */
+function get_test_array_items() {
+  $possible_ids = [
+    0 => [
+      'search_ids' => '4708851,24619059,193067,54538230',
+      'solution' => '193067',
+    ],
+    1 => [
+      'search_ids' => '193967,201528,192636,192797',
+      'solution' => '201528',
+    ],
+  ];
+  $random_result = array_rand($possible_ids, 1);
+  return $possible_ids[1];
+}
+
+/**
+ * Build the checkboxes for Captcha form.
+ */
+function build_captcha_items($res) {
+  $options = [];
+  foreach ($res->opaResponse->results->result as $key => $value) {
+    if (is_array($value->objects->object)) {
+      $url = $value->objects->object[0]->file->{'@url'};
+    }
+    else {
+      $url = $value->objects->object->file->{'@url'};
+    }
+    $options[$value->naId] = '<div class="captcha-response-item"><img src="' . $url . '" alt="' . $value->description->item->title . '" /></div>';
+  }
+
+  return $options;
+}
+
+/**
  * Custom Validation.
  */
-function nara_captcha_validation($solution, $response) {
-  if (implode('|', $response) == $solution) {
-
+function nara_captcha_validation($solution, $response, $element, $form_state) {
+  ksm(in_array($solution, $response));
+  // // ksm($element);
+  // ksm($form_state);
+  // return FALSE;
+  if (!in_array($solution, $response)) {
+    
     // $config = \Drupal::config('nara_captcha.settings');
     // $client = \Drupal::httpClient();
     // $uri = $config->get('api_url');
@@ -111,3 +135,8 @@ function nara_captcha_validation($solution, $response) {
     return FALSE;
   }
 }
+
+
+
+// http://localhost:8007/image-captcha-generate/84/1519245360
+// http://localhost:8007/image-captcha-generate/84/1519245385

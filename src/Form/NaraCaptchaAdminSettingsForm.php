@@ -6,6 +6,8 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
+// TODO: Look at adding sizes or responsive css.
+
 /**
  * Configure NARA Captcha settings for this site.
  */
