@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Implements NARA CAPTCHA for use with the CAPTCHA module.
+ */
+
 use Drupal\Core\Form\FormStateInterface;
 
 /**
@@ -25,7 +30,7 @@ function nara_captcha_preprocess_captcha(&$variables) {
   if ($variables['element']['#captcha_type'] == 'nara_captcha/NARA Captcha') {
     $theme_setting = \Drupal::config('nara_captcha.settings');
     if ($theme_setting->get('theme') == '1') {
-      $variables['details']['#attributes']['class'][] ='nara-captcha-light-theme';
+      $variables['details']['#attributes']['class'][] = 'nara-captcha-light-theme';
     }
     else {
       $variables['details']['#attributes']['class'][] = 'nara-captcha-dark-theme';
@@ -44,19 +49,83 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
     case 'generate':
       if ($captcha_type == 'NARA Captcha') {
         $captcha = [];
+        $config = \Drupal::config('nara_captcha.settings');
         $options = NULL;
         $url = '';
         $client = \Drupal::httpClient();
-        $naIds = get_test_array_items();
-        $res = json_decode($client->request('GET', 'https://catalog.archives.gov/api/v1?naIds=' . $naIds['search_ids'])->getBody()->getContents());
+        $ids = get_captcha_items($config);
+        $res = json_decode($client->request('GET', 'https://catalog.archives.gov/api/v1?naIds=' . $ids)->getBody()->getContents());
         $options = build_captcha_items($res);
-        $captcha['solution'] = $naIds['solution'];
-        $captcha['form']['captcha_response'] = [
-          '#type' => 'checkboxes',
-          '#options' => $options,
-          '#title' => t('Select all images with typed text below:'),
-          '#required' => TRUE,
+
+        // Jump to accessible question.
+        $captcha['form']['skip'] = [
+          '#type' => 'inline_template',
+          '#template' => '<a href="#edit-accessible-option" class="visually-hidden focusable skip-link">
+            Skip Images to Accessible Question</a>',
         ];
+
+        $captcha['form']['captcha_response'] = [
+          '#type' => 'fieldset',
+          '#title' => t("Check any images that don't include handwritten text."),
+          '#tree' => TRUE,
+        ];
+        if ($res != NULL) {
+          $captcha['form']['itemIds'] = [
+            '#type' => 'hidden',
+            '#value' => implode(',', $options[1]),
+          ];
+
+          $captcha['form']['objectNumbers'] = [
+            '#type' => 'hidden',
+            '#value' => implode(',', $options[2]),
+          ];
+          // How many items are known when validating.
+          $captcha['solution'] = $config->get('number_of_known');
+
+          // Captcha Checkboxes.
+          foreach ($options[0] as $key => $value) {
+            $captcha['form']['captcha_response'][$key] = [
+              '#type' => 'checkbox',
+              '#title' => $value,
+              '#attributes' => [
+                'class' => ['visually-hidden'],
+              ],
+            ];
+          }
+        }
+
+        $accessible_word = get_accessible_word($config->get('accessibility_words'));
+
+        $captcha['form']['accessible_option'] = [
+          '#type' => 'checkbox',
+          '#title' => t('Answer text based captcha question.'),
+        ];
+
+        $captcha['form']['word'] = [
+          '#type' => 'hidden',
+          '#value' => $accessible_word['word'],
+        ];
+
+        $captcha['form']['accessible_input'] = [
+          '#type' => 'textfield',
+          '#title' => $accessible_word['title'],
+          '#states' => [
+            'visible' => [
+              ':input[name="accessible_option"]' => [
+                ['checked' => TRUE],
+              ],
+            ],
+          ],
+        ];
+
+        $honeypot_machine_name = preg_replace('@[^a-z0-9-]+@', '_', strtolower($config->get('honeypot_fieldname')));
+        $captcha['form'][$honeypot_machine_name] = [
+          '#type' => 'textfield',
+          '#title' => $config->get('honeypot_fieldname'),
+          '#prefix' => '<div class="hidden">',
+          '#suffix' => '</div>',
+        ];
+
         $captcha['form']['logo'] = [
           '#type' => 'inline_template',
           '#template' => '<div class="nara-logo">
@@ -65,6 +134,7 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
               </a>
           </div>',
         ];
+
         $captcha['captcha_validate'] = 'nara_captcha_validation';
         return $captcha;
       }
@@ -73,21 +143,81 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
 }
 
 /**
- * Currently just a test function to supply an array [search ids, solution].
+ * Create an array of 4 object ids to populate the Captcha.
  */
-function get_test_array_items() {
-  $possible_ids = [
-    0 => [
-      'search_ids' => '4708851,24619059,193067,54538230',
-      'solution' => '193067',
-    ],
-    1 => [
-      'search_ids' => '193967,201528,192636,192797',
-      'solution' => '201528',
-    ],
-  ];
-  $random_result = array_rand($possible_ids, 1);
-  return $possible_ids[1];
+function get_accessible_word($word_list) {
+  $new_word = [];
+  $word_array = explode(',', $word_list);
+  $word_count = count($word_array) - 1;
+  $random_word = (string) $word_array[rand(0, $word_count)];
+  $random_word_letters = str_split($random_word);
+
+  $random_title = 'Please spell the following word: ';
+  $random_title .= $random_word . '. ';
+
+  for ($i = 0; $i < count($random_word_letters); $i++) {
+    $random_title .= $random_word_letters[$i] . ' ';
+  }
+  $new_word['word'] = $random_word;
+  $new_word['title'] = $random_title;
+  return $new_word;
+}
+
+/**
+ * Create an array of 4 object ids to populate the Captcha.
+ */
+function get_captcha_items($config) {
+  $captcha_results = '';
+  $known_ids;
+  $unknown_ids;
+  $random_position = [];
+
+  // If either config is NULL return nothing.
+  if ($config->get('known_ids') !== NULL) {
+    $known_ids = explode(',', $config->get('known_ids'));
+    // Set random position in layout for known.
+    if ($config->get('number_of_known') == 1) {
+      $random_position[0] = rand(0, 3);
+    }
+    else {
+      for ($i = 0; $i < $config->get('number_of_known'); $i++) {
+        if ($i % 2 == 0) {
+          $random_position[$i] = rand(0, 1);
+        }
+        else {
+          $random_position[$i] = rand(2, 3);
+        }
+      }
+    }
+  }
+  else {
+    return NULL;
+  }
+
+  if ($config->get('unknown_ids') !== NULL) {
+    $unknown_ids = explode(',', $config->get('unknown_ids'));
+  }
+  else {
+    return NULL;
+  }
+
+  // Get 4 object ids for the captcha.
+  // There could be duplicates, but can fix later if happens a lot.
+  for ($i = 0; $i < 4; $i++) {
+    if ($i === $random_position[0]) {
+      $max = count($known_ids) - 1;
+      $captcha_results .= (string) $known_ids[rand(0, $max)] . ',';
+    }
+    elseif (isset($random_position[1]) && $i === $random_position[1]) {
+      $max = count($known_ids) - 1;
+      $captcha_results .= (string) $known_ids[rand(0, $max)] . ',';
+    }
+    else {
+      $max = count($unknown_ids) - 1;
+      $captcha_results .= (string) $unknown_ids[rand(0, $max)] . ',';
+    }
+  }
+  return trim($captcha_results, ',');
 }
 
 /**
@@ -95,16 +225,28 @@ function get_test_array_items() {
  */
 function build_captcha_items($res) {
   $options = [];
+  // Build an array of results, adding in known id.
   foreach ($res->opaResponse->results->result as $key => $value) {
     if (is_array($value->objects->object)) {
-      $url = $value->objects->object[0]->file->{'@url'};
+      $image_counter = 0;
+      foreach ($value->objects->object as $obKey => $obValue) {
+        if (($obValue->file->{'@mime'} === "image/jpeg") && $image_counter < 1) {
+          $url = $obValue->file->{'@url'};
+          $options[2][$key] = $value->objects->object[$obKey]->{'@id'};
+          $image_counter++;
+        }
+      }
     }
     else {
       $url = $value->objects->object->file->{'@url'};
+      $options[2][$key] = (string) $value->objects->object->{'@id'};
     }
-    $options[$value->naId] = '<div class="captcha-response-item"><img src="' . $url . '" alt="' . $value->description->item->title . '" /></div>';
-  }
 
+    // Save $value->description->item->title.
+    $option_description = $value->description->item->title;
+    $options[0][$key] = '<span class="captcha-response-item"><img src="' . $url . '" alt="' . $option_description . '" title="' . $option_description . '" /></span>';
+    $options[1][$key] = $value->naId;
+  }
   return $options;
 }
 
@@ -112,31 +254,56 @@ function build_captcha_items($res) {
  * Custom Validation.
  */
 function nara_captcha_validation($solution, $response, $element, $form_state) {
-  ksm(in_array($solution, $response));
-  // // ksm($element);
-  // ksm($form_state);
-  // return FALSE;
-  if (!in_array($solution, $response)) {
-    
-    // $config = \Drupal::config('nara_captcha.settings');
-    // $client = \Drupal::httpClient();
-    // $uri = $config->get('api_url');
-
-    // Request disabled until API solution finished
-    // $request = $client->post($uri, [
-    //   'form_params' => [
-    //     "naid" => 12141,
-    //   ],
-    // ]);
-    //$response = json_decode($request->getBody());
-    return TRUE;
-  }
-  else {
+  $config = \Drupal::config('nara_captcha.settings');
+  ksm($response);
+  // A quick honeypot style validation.
+  // If the field is filled in return FALSE with error message.
+  $honeypot_machine_name = preg_replace('@[^a-z0-9-]+@', '_', strtolower($config->get('honeypot_fieldname')));
+  if ($form_state->getValue($honeypot_machine_name)) {
+    drupal_set_message(t('You have filled out @honeypot, please leave blank.', ['@honeypot' => $config->get('honeypot_fieldname')]), 'error');
     return FALSE;
+  }
+
+  // Check to see if Accessibility Option was checked.
+  if ($form_state->getValue('accessible_option') === 1) {
+    if ($form_state->getValue('accessible_input') === $form_state->getValue('word')) {
+      return TRUE;
+    }
+    else {
+      drupal_set_message(t('The text entered does not match, please try again.'), 'error');
+      return FALSE;
+    }
+  }
+
+  // Compare each option ID to known id list & return false if there is a match.
+  if ($form_state->getValue('itemIds') && $form_state->getValue('objectNumbers')) {
+    $itemIds = explode(',', $form_state->getValue('itemIds'));
+    $objectNumbers = explode(',', $form_state->getValue('objectNumbers'));
+    $known_ids = explode(',', $config->get('known_ids'));
+    foreach ($response as $key => $value) {
+      if ($value != 0) {
+        if (in_array($itemIds[$value], $known_ids)) {
+          return FALSE;
+        }
+        else {
+          tag_image($config, $itemIds[$value], $objectNumbers[$value]);
+        }
+      }
+    }
+
+    return TRUE;
   }
 }
 
+/**
+ * Custom Validation.
+ */
+function tag_image($config, $naid, $position) {
+  $token = $config->get('api_token');
+  $tag = $config->get('tag');
+  $api_url = $config->get('api_url');
+  $client = \Drupal::httpClient();
 
-
-// http://localhost:8007/image-captcha-generate/84/1519245360
-// http://localhost:8007/image-captcha-generate/84/1519245385
+  $res = $client->request('POST', $api_url . 'id/' . $naid . '/objects/' . $position . '/tags?text=' . $tag, ['headers' => ['Authorization' => $token]]);
+  ksm(json_decode($res->getBody()->getContents()));
+}

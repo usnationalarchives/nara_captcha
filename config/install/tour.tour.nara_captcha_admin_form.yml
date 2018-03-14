@@ -1,0 +1,45 @@
+id: nara_captcha_admin_form
+module: nara_captcha
+label: Manage settings for the NARA Captcha plugin.
+langcode: en
+routes:
+  - route_name: nara_captcha.admin_settings_form
+tips:
+  introduction:
+    id: introduction
+    plugin: text
+    label: NARA Captcha Plugin
+    body: This plugin extends the Captcha module creating a new plugin that can be used to prevent spam, and also contribute to helping tag items in the National Archive.
+    weight: "1"
+  general:
+    id: general
+    plugin: text
+    label: General Plugin Settings
+    body: Using this section, you can add the credentials for the API and set defaults for the look of the plugin.
+    weight: "2"
+    attributes:
+      data-id: edit-general
+  api_settings:
+    id: api_settings
+    plugin: text
+    label: API Settings
+    body: Set URL and credentials. Also allows to build lists of ids using API queries.
+    weight: "3"
+    attributes:
+      data-id: edit-credentials
+  captcha_items:
+    id: captcha_items
+    plugin: text
+    label: Setting Captcha IDs
+    body: To keep the captcha performant, this section allows you to prepull the ids using a more robust request.
+    weight: "4"
+    attributes:
+      data-id: edit-captcha-items
+  accessibility:
+    id: accessibility
+    plugin: text
+    label: Accessibility Settings
+    body: Set a comma separated list of words to use in the accessible text option.
+    weight: "5"
+    attributes:
+      data-id: edit-accessibility
