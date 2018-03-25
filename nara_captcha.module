@@ -118,6 +118,11 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
           ],
         ];
 
+        $captcha['form']['zoom'] = [
+          '#type' => 'inline_template',
+          '#template' => "<div id='nara-captcha-zoom' class='visually-hidden'><div id='inner-zoom'></div><a href='#' id='zoom-close'>Close Zoom</a></div>",
+        ];
+
         $honeypot_machine_name = preg_replace('@[^a-z0-9-]+@', '_', strtolower($config->get('honeypot_fieldname')));
         $captcha['form'][$honeypot_machine_name] = [
           '#type' => 'textfield',
@@ -244,7 +249,7 @@ function build_captcha_items($res) {
 
     // Save $value->description->item->title.
     $option_description = $value->description->item->title;
-    $options[0][$key] = '<span class="captcha-response-item"><img src="' . $url . '" alt="' . $option_description . '" title="' . $option_description . '" /></span>';
+    $options[0][$key] = '<span class="captcha-response-item"><img class="captcha-image" src="' . $url . '" alt="' . $option_description . '" title="' . $option_description . '" /><a href="#" class="captcha-zoom">Zoom Image</a></span>';
     $options[1][$key] = $value->naId;
   }
   return $options;

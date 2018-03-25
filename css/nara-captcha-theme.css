@@ -5,6 +5,7 @@
 }
 #edit-captcha-response {
   border: none;
+  position: relative;
 }
 
 #edit-captcha-response .fieldset-wrapper {
@@ -130,4 +131,45 @@
 
 .nara-captcha-light-theme .nara-logo a {
   color: #555;
+}
+
+.captcha-zoom {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index:10;
+}
+
+#nara-captcha-zoom {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(41, 41, 41, 0.9);
+  height: 100%;
+  z-index: 11;
+}
+
+#inner-zoom {
+  height: 100%;
+  position: relative;
+  display: block;
+  text-align: center;
+}
+
+#nara-captcha-zoom #inner-zoom img {
+  height: 100%;
+  max-width: 100%;
+  width: auto;
+  display: inline-block;
+}
+
+#zoom-close {
+  background-color: rgba(41, 41, 41, 0.9);
+  padding: 5px;
+  color: #fff;
+  position: absolute;
+  top: 0;
+  right: 0;
 }

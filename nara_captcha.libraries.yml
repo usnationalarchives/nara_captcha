@@ -3,3 +3,5 @@ nara-captcha:
   css:
     theme:
       css/nara-captcha-theme.css: {}
+  js:
+    js/nara-captcha.js: {}
