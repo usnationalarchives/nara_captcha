@@ -132,6 +132,7 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
       ],
     ];
 
+    // Token only lasts for a short time, so may need to get token on cron.
     $form['credentials']['get_token'] = [
       '#type' => 'submit',
       '#submit' => ['::getApiToken'],
@@ -148,7 +149,7 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
       '#open' => 'TRUE',
     ];
 
-    // Known Items.
+    // Get Known items, these will block captcha if chosen.
     $form['captcha_items']['known'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Known Items'),
@@ -176,7 +177,7 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
       '#value' => $this->t('@known_btn', ['@known_btn' => $known_btn]),
     ];
 
-    // Unknown Items.
+    // Get Unknown Items to compare against.
     $form['captcha_items']['unknown'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Unknown Items'),
@@ -244,7 +245,6 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
     if (!$res->opaResponse->results->result) {
       drupal_set_message(t('No results for for your current query.'), 'error', TRUE);
     }
-    ksm($res);
     foreach ($res->opaResponse->results->result as $result) {
       $knownItems .= $result->naId . ',';
     }
@@ -255,7 +255,6 @@ class NaraCaptchaAdminSettingsForm extends ConfigFormBase {
       ->set('known_ids', $form_state->get('known_items'))
       ->set('known_url', $form_state->getValue('known_url'))
       ->save();
-    ksm($config);
     $form_state->setRebuild();
     drupal_get_messages();
   }

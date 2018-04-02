@@ -69,6 +69,7 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
           '#title' => t("Check any images that don't include handwritten text."),
           '#tree' => TRUE,
         ];
+
         if ($res != NULL) {
           $captcha['form']['itemIds'] = [
             '#type' => 'hidden',
@@ -79,6 +80,7 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
             '#type' => 'hidden',
             '#value' => implode(',', $options[2]),
           ];
+
           // How many items are known when validating.
           $captcha['solution'] = $config->get('number_of_known');
 
@@ -94,8 +96,8 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
           }
         }
 
+        // Set Accessible word for Captcha.
         $accessible_word = get_accessible_word($config->get('accessibility_words'));
-
         $captcha['form']['accessible_option'] = [
           '#type' => 'checkbox',
           '#title' => t('Answer text based captcha question.'),
@@ -148,7 +150,7 @@ function nara_captcha_captcha($op, $captcha_type = '', $captcha_sid = NULL) {
 }
 
 /**
- * Create an array of 4 object ids to populate the Captcha.
+ * Get a word from the list of words added in the admin config form.
  */
 function get_accessible_word($word_list) {
   $new_word = [];
@@ -246,10 +248,9 @@ function build_captcha_items($res) {
       $url = $value->objects->object->file->{'@url'};
       $options[2][$key] = (string) $value->objects->object->{'@id'};
     }
-
-    // Save $value->description->item->title.
+    $module_path = \Drupal::service('module_handler')->getModule('nara_captcha')->getPath();
     $option_description = $value->description->item->title;
-    $options[0][$key] = '<span class="captcha-response-item"><img class="captcha-image" src="' . $url . '" alt="' . $option_description . '" title="' . $option_description . '" /><a href="#" class="captcha-zoom">Zoom Image</a></span>';
+    $options[0][$key] = '<span class="captcha-response-item"><img class="captcha-image" src="' . $url . '" alt="' . $option_description . '" title="' . $option_description . '" /><a href="#" class="captcha-zoom"><span>Zoom Image</span> <img src="/' . $module_path . '/assets/zoom_in.svg" alt="Magnifying Glass" /></a></span>';
     $options[1][$key] = $value->naId;
   }
   return $options;
@@ -260,7 +261,7 @@ function build_captcha_items($res) {
  */
 function nara_captcha_validation($solution, $response, $element, $form_state) {
   $config = \Drupal::config('nara_captcha.settings');
-  ksm($response);
+
   // A quick honeypot style validation.
   // If the field is filled in return FALSE with error message.
   $honeypot_machine_name = preg_replace('@[^a-z0-9-]+@', '_', strtolower($config->get('honeypot_fieldname')));
@@ -301,7 +302,7 @@ function nara_captcha_validation($solution, $response, $element, $form_state) {
 }
 
 /**
- * Custom Validation.
+ * POST an image tag through the NARA API.
  */
 function tag_image($config, $naid, $position) {
   $token = $config->get('api_token');
@@ -310,5 +311,4 @@ function tag_image($config, $naid, $position) {
   $client = \Drupal::httpClient();
 
   $res = $client->request('POST', $api_url . 'id/' . $naid . '/objects/' . $position . '/tags?text=' . $tag, ['headers' => ['Authorization' => $token]]);
-  ksm(json_decode($res->getBody()->getContents()));
 }

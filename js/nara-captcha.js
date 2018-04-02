@@ -1,4 +1,4 @@
-(($, Drupal, drupalSettings) => {
+(($, Drupal) => {
   const $captchaZoomBox = $('#nara-captcha-zoom');
 
   $(document).ready(() => {
@@ -11,6 +11,7 @@
     const $clickedImage = $(event.target).closest('.captcha-response-item').children('.captcha-image').clone();
     $('#inner-zoom').empty();
     $('#inner-zoom').append($clickedImage);
+    $('#zoom-close').focus();
   });
 
   $('#zoom-close').on('click', (event) => {
@@ -18,4 +19,4 @@
     $('#nara-captcha-zoom').addClass('visually-hidden');
     $('#inner-zoom').empty();
   });
-})(jQuery, Drupal, drupalSettings);
+})(jQuery, Drupal);

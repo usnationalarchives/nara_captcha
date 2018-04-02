@@ -135,9 +135,28 @@
 
 .captcha-zoom {
   position: absolute;
+  background-color: rgba(255,255,255,.7);
   top: 0;
   right: 0;
   z-index:10;
+  width: 50px;
+  height: 50px;
+  border-bottom: none;
+}
+
+.captcha-zoom span {
+  text-indent: -1000px;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+
+.captcha-zoom img {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 #nara-captcha-zoom {
@@ -150,6 +169,8 @@
   height: 100%;
   z-index: 11;
 }
+
+
 
 #inner-zoom {
   height: 100%;

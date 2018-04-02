@@ -1,7 +1,7 @@
 name: 'NARA Captcha'
 type: module
 # Add better description
-description: 'Protect your website from spam and abuse while letting real people pass through with ease.'
+description: 'A Drupal Captcha Plugin that also helps tag items in the National Archives catalog.'
 package: Spam control
 core: 8.x
 configure: nara_captcha.admin_settings_form
